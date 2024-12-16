@@ -1,0 +1,22 @@
+{
+  "name": "openport",
+  "description": "Self-hosted tunneling server with simple, flexible connections",
+  "version": "0.0.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/magomzr/openport.git"
+  },
+  "author": "Mario Gómez <mariogomezarr@gmail.com>",
+  "main": "index.js",
+  "type": "module",
+  "keywords": [
+    "tunneling",
+    "localhost",
+    "server",
+    "port"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

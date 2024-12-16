@@ -1,0 +1,8 @@
+{
+  "name": "openport",
+  "description": "Self-hosted tunneling server with simple, flexible connections",
+  "scripts": {
+    "server:start": "npm --prefix server start",
+    "client:start": "npm --prefix client start"
+  }
+}
