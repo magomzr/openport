@@ -12,12 +12,14 @@ const startClient = (host, localPort, callback = () => {}) => {
       port: 3000,
       path: "/api/create",
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
     };
 
     const req = http.request(createReqOpts, (res) => {
       let data = "";
       res.on("data", (chunk) => {
-        console.log("chunk", chunk);
         data += chunk;
       });
       res.on("end", () => {
@@ -43,15 +45,20 @@ const startClient = (host, localPort, callback = () => {}) => {
         });
 
         remote.on("error", (err) => {
-          console.error("Error connecting to remote server", err);
+          log("error", `Error connecting to remote server: ${err.message}`);
+        });
+
+        remote.on("close", () => {
+          log("info", "Remote connection closed");
         });
       });
     });
 
     req.on("error", (err) => {
-      console.error("Error creating tunnel", err);
+      log("error", `Error creating tunnel: ${err.message}`);
     });
 
+    req.write(JSON.stringify({ localPort }));
     req.end();
     callback();
   } catch (error) {
@@ -59,11 +66,11 @@ const startClient = (host, localPort, callback = () => {}) => {
   }
 };
 
-startClient("localhost", 3000, (err) => {
+startClient("localhost", 5173, (err) => {
   if (err) {
-    console.error("Error starting client", err);
+    log("error", `Error starting client: ${err.message}`);
     return;
   }
 
-  console.log("Client started");
+  log("info", "Client started");
 });
