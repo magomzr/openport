@@ -2,7 +2,7 @@ import express, { json } from "express";
 import { v4 as uuidv4, validate } from "uuid";
 import http from "http";
 import net from "net";
-import { DEFAULT_PORT, log } from "./src/utils.js";
+import { DEFAULT_PORT, handleRequest, log } from "./src/utils.js";
 
 const startServer = (port, callback = () => {}) => {
   try {
@@ -12,11 +12,18 @@ const startServer = (port, callback = () => {}) => {
     app.use(json());
 
     app.get("/", (req, res) => {
-      res.send("Self-hosted tunneling server with simple, flexible connections.");
+      res.send(
+        "OpenPort: Self-hosted tunneling server with simple, flexible connections."
+      );
     });
 
     app.get("/api/status", (req, res) => {
-      res.json({ status: "ok", clients: clients.size, mem: process.memoryUsage() });
+      res.json({
+        status: "ok",
+        clients: clients.size,
+        memoryUsage: process.memoryUsage(),
+        uptime: process.uptime(),
+      });
     });
 
     app.post("/api/create", (_, res) => {
@@ -28,6 +35,10 @@ const startServer = (port, callback = () => {}) => {
         clients.set(id, { createdAt: Date.now(), port });
         res.json({ status: "ok", id, port });
       });
+    });
+
+    app.get("/api/tunnels", (_, res) => {
+      res.json([...clients]);
     });
 
     server.on("request", (req, res) => {
@@ -55,18 +66,20 @@ const startServer = (port, callback = () => {}) => {
         const targetPort = req.headers["op-target-port"];
 
         let message;
-        if (clients.has(targetId)) {
+        if (
+          clients.has(targetId) &&
+          clients.get(targetId).port === parseInt(targetPort)
+        ) {
           message = `Tunneling request to existing client`;
-          // TODO: Implement tunneling logic to send request to target client
           log("info", message);
+          handleRequest(req, res, targetPort);
         } else {
           message = "Invalid tunneling request, target client does not exist";
           log("error", message);
+          res.writeHead(404);
+          res.write(message);
+          res.end();
         }
-
-        res.writeHead(200);
-        res.write(message);
-        res.end();
       } else {
         app(req, res);
       }
