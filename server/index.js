@@ -2,22 +2,43 @@ import express, { json } from "express";
 import { v4 as uuidv4, validate } from "uuid";
 import http from "http";
 import net from "net";
-import { DEFAULT_PORT, handleRequest, log } from "./src/utils.js";
+
+const log = (type, message) => {
+  console[type](
+    `[${new Date().toISOString()}] ${type.toUpperCase()}: ${message}`
+  );
+};
+
+const handleRequest = (req, res, targetPort) => {
+  const proxy = http.request({ port: targetPort }, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res, { end: true });
+  });
+
+  req.pipe(proxy, { end: true });
+
+  proxy.on("error", (err) => {
+    res.writeHead(500);
+    res.write("Error connecting to target server");
+    res.end();
+  });
+};
 
 const startServer = (port, callback = () => {}) => {
   try {
+    const DEFAULT_PORT = 3000;
     const app = express();
     const server = http.createServer();
     const clients = new Map();
     app.use(json());
 
-    app.get("/", (req, res) => {
+    app.get("/", (_, res) => {
       res.send(
         "OpenPort: Self-hosted tunneling server with simple, flexible connections."
       );
     });
 
-    app.get("/api/status", (req, res) => {
+    app.get("/api/status", (_, res) => {
       res.json({
         status: "ok",
         clients: clients.size,

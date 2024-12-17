@@ -1,6 +1,7 @@
 {
   "name": "openport",
   "description": "Self-hosted tunneling server with simple, flexible connections",
+  "author": "Mario Gómez <mariogomezarr@gmail.com>",
   "scripts": {
     "server:start": "npm --prefix server start",
     "client:start": "npm --prefix client start"
