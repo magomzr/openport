@@ -17,6 +17,6 @@
     "port"
   ],
   "scripts": {
-    "start": "node index.js"
+    "start": "node client.js"
   }
 }

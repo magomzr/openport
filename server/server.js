@@ -4,9 +4,7 @@ import http from "http";
 import net from "net";
 
 const log = (type, message) => {
-  console[type](
-    `[${new Date().toISOString()}] ${type.toUpperCase()}: ${message}`
-  );
+  console[type](`[${new Date().toISOString()}] ${type.toUpperCase()}: ${message}`);
 };
 
 const handleRequest = (req, res, targetPort) => {
@@ -33,9 +31,7 @@ const startServer = (port, callback = () => {}) => {
     app.use(json());
 
     app.get("/", (_, res) => {
-      res.send(
-        "OpenPort: Self-hosted tunneling server with simple, flexible connections."
-      );
+      res.send("OpenPort: Self-hosted tunneling server with simple, flexible connections.");
     });
 
     app.get("/api/status", (_, res) => {
@@ -87,10 +83,7 @@ const startServer = (port, callback = () => {}) => {
         const targetPort = req.headers["op-target-port"];
 
         let message;
-        if (
-          clients.has(targetId) &&
-          clients.get(targetId).port === parseInt(targetPort)
-        ) {
+        if (clients.has(targetId) && clients.get(targetId).port === parseInt(targetPort)) {
           message = `Tunneling request to existing client`;
           log("info", message);
           handleRequest(req, res, targetPort);
