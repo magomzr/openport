@@ -4,7 +4,9 @@ import http from "http";
 import net from "net";
 
 const log = (type, message) => {
-  console[type](`[${new Date().toISOString()}] ${type.toUpperCase()}: ${message}`);
+  console[type](
+    `[${new Date().toISOString()}] ${type.toUpperCase()}: ${message}`
+  );
 };
 
 const handleRequest = (req, res, targetPort) => {
@@ -16,6 +18,7 @@ const handleRequest = (req, res, targetPort) => {
   req.pipe(proxy, { end: true });
 
   proxy.on("error", (err) => {
+    log("error", `Error connecting to target server: ${err.message}`);
     res.writeHead(500);
     res.write("Error connecting to target server");
     res.end();
@@ -31,7 +34,9 @@ const startServer = (port, callback = () => {}) => {
     app.use(json());
 
     app.get("/", (_, res) => {
-      res.send("OpenPort: Self-hosted tunneling server with simple, flexible connections.");
+      res.send(
+        "OpenPort: Self-hosted tunneling server with simple, flexible connections."
+      );
     });
 
     app.get("/api/status", (_, res) => {
@@ -49,7 +54,7 @@ const startServer = (port, callback = () => {}) => {
       newServer.listen(() => {
         const { port } = newServer.address();
         log("info", `Created new server with id: ${id} on port: ${port}`);
-        clients.set(id, { createdAt: Date.now(), port });
+        clients.set(id, { createdAt: Date.now(), port, server: newServer });
         res.json({ status: "ok", id, port });
       });
     });
@@ -80,10 +85,13 @@ const startServer = (port, callback = () => {}) => {
         }
 
         const targetId = req.headers["op-target-id"];
-        const targetPort = req.headers["op-target-port"];
+        const targetPort = parseInt(req.headers["op-target-port"], 10);
 
         let message;
-        if (clients.has(targetId) && clients.get(targetId).port === parseInt(targetPort)) {
+        if (
+          clients.has(targetId) &&
+          clients.get(targetId).port === targetPort
+        ) {
           message = `Tunneling request to existing client`;
           log("info", message);
           handleRequest(req, res, targetPort);
@@ -99,9 +107,10 @@ const startServer = (port, callback = () => {}) => {
       }
     });
 
-    server.listen(port || DEFAULT_PORT);
-
-    callback();
+    server.listen(port || DEFAULT_PORT, () => {
+      log("info", `Server started on port ${port || DEFAULT_PORT}`);
+      callback();
+    });
   } catch (error) {
     callback(error);
   }
@@ -112,5 +121,5 @@ startServer(3000, (err) => {
     console.error("Error starting server", err);
     return;
   }
-  log("info", "Server started on port 3000");
+  log("info", "Waiting for incoming connections...");
 });

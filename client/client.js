@@ -2,7 +2,9 @@ import http from "http";
 import net from "net";
 
 const log = (type, message) => {
-  console[type](`[${new Date().toISOString()}] ${type.toUpperCase()}: ${message}`);
+  console[type](
+    `[${new Date().toISOString()}] ${type.toUpperCase()}: ${message}`
+  );
 };
 
 const startClient = (host, localPort, callback = () => {}) => {
@@ -23,34 +25,38 @@ const startClient = (host, localPort, callback = () => {}) => {
         data += chunk;
       });
       res.on("end", () => {
-        const { id, port } = JSON.parse(data);
-        log("info", `Tunnel created with id: ${id} on port: ${port}`);
+        try {
+          const { id, port } = JSON.parse(data);
+          log("info", `Tunnel created with id: ${id} on port: ${port}`);
 
-        // Connecting to remote server
-        const remote = net.connect(port, host, () => {
-          log("info", "Connected to remote server");
-          remote.setKeepAlive(true);
+          // Connecting to remote tunnel server
+          const remote = net.connect(port, host, () => {
+            log("info", "Connected to remote tunnel server");
+            remote.setKeepAlive(true);
 
-          // Connecting to local port
-          const local = net.connect(localPort, "localhost", () => {
-            log("info", "Connected to local port");
+            // Connecting to local port
+            const local = net.connect(localPort, "localhost", () => {
+              log("info", "Connected to local server");
+              // Pipe data between local server and remote tunnel
+              local.pipe(remote).pipe(local);
+            });
 
-            local.pipe(remote).pipe(local);
+            local.on("error", (err) => {
+              log("error", `Error connecting to local port: ${err.message}`);
+              remote.end();
+            });
           });
 
-          local.on("error", (err) => {
-            log("error", "Error connecting to local port");
-            remote.end();
+          remote.on("error", (err) => {
+            log("error", `Error connecting to remote server: ${err.message}`);
           });
-        });
 
-        remote.on("error", (err) => {
-          log("error", `Error connecting to remote server: ${err.message}`);
-        });
-
-        remote.on("close", () => {
-          log("info", "Remote connection closed");
-        });
+          remote.on("close", () => {
+            log("info", "Remote connection closed");
+          });
+        } catch (parseError) {
+          log("error", `Error parsing server response: ${parseError.message}`);
+        }
       });
     });
 
